@@ -33,7 +33,9 @@
 
     <input id="planned" type="text" placeholder="Planned">
     <input id="actual" type="text" placeholder="Actual">
-    <button id="chartit" type="submit" class="btn btn-primary">Chart it</button>
+    <button id="chartdata" type="submit" class="btn btn-primary">Chart it</button>
+    <br>
+    <input id="csvfile" type="file">
 
     <div id="container" style="width:100%; height:400px;"></div>
 
@@ -67,7 +69,6 @@
                     label: {
                         connectorAllowed: false
                     },
-                    pointStart: 2010
                 }
             },
             series: [{
@@ -93,10 +94,68 @@
             }
         });
 
-        $('#chartit').click(function () {
-            chart.series[0].setData(document.getElementById("planned").value.split(",").map( Number ));
-            chart.series[1].setData(document.getElementById("actual").value.split(",").map( Number ));
+        $('#chartdata').click(function () {
+            while(chart.series.length > 0)
+                chart.series[0].remove();
+            chart.options.plotOptions.series.pointStart = 2010;
+            chart.addSeries({name: 'Planned', data: document.getElementById("planned").value.split(",").map( Number )}, false);
+            chart.addSeries({name: 'Actual', data: document.getElementById("actual").value.split(",").map( Number )}, true);
         });
+
+        var fileInput = document.getElementById("csvfile");
+
+        var readFile = function () {
+            var reader = new FileReader();
+            reader.onload = function () {
+                var data = reader.result;
+                updateChartData(data);
+            };
+            // start reading the file. When it is done, calls the onload event defined above.
+            reader.readAsBinaryString(fileInput.files[0]);
+        };
+
+        function updateChartData (data) {
+            while(chart.series.length > 0)
+                chart.series[0].remove();
+
+            delete(chart.options.plotOptions.series.pointStart);
+            
+            var lines = data.split('\n');
+            var categories = [];
+            lines.forEach(function(line, lineNo) {
+                var items = line.split(',');
+
+                // header line contains categories
+                if (lineNo == 0) {
+                    items.forEach(function(item, itemNo) {
+                        categories.push(item);
+                    });
+                }
+
+                // the rest of the lines contain data with their name in the first position
+                else {
+                    var series = {
+                        data: []
+                    };
+                    items.forEach(function(item, itemNo) {
+                        if (itemNo == 0) {
+                            series.name = item;
+                        } else {
+                            series.data.push(parseFloat(item));
+                        }
+                    });
+
+                    chart.addSeries(series, false);
+                }
+
+                chart.xAxis[0].setCategories(categories);
+                chart.redraw();
+
+            });
+        }
+
+        fileInput.addEventListener('change', readFile);
+
     </script>
     {% endblock %}
 
