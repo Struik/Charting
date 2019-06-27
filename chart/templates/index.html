@@ -119,7 +119,7 @@
                 chart.series[0].remove();
 
             delete(chart.options.plotOptions.series.pointStart);
-            
+
             var lines = data.split('\n');
             var categories = [];
             lines.forEach(function(line, lineNo) {
@@ -148,7 +148,8 @@
                     chart.addSeries(series, false);
                 }
 
-                chart.xAxis[0].setCategories(categories);
+                chart.options.xAxis[0].title.text = categories[0];
+                chart.xAxis[0].setCategories(categories.slice(1));
                 chart.redraw();
 
             });
